@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.log
+*.err
+*.har
+*.txt
+HAK
+System.Drawing.Drawing2D.GraphicsPath

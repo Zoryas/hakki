@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c0b10" />
+      <stop offset="100%" stop-color="#0b0b0b" />
+    </linearGradient>
+    <linearGradient id="accent192" x1="20%" y1="10%" x2="90%" y2="90%">
+      <stop offset="0%" stop-color="#ff4d58" />
+      <stop offset="100%" stop-color="#e50914" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="48" fill="#050505" />
+  <rect x="10" y="10" width="172" height="172" rx="42" fill="url(#bg192)" />
+  <circle cx="146" cy="46" r="22" fill="rgba(255,255,255,0.08)" />
+  <path d="M28 136c19-37 48-59 87-66 14-3 28-3 49-1v45c-31-7-58-3-85 10-16 8-30 19-43 33H28z" fill="url(#accent192)" />
+  <text x="96" y="109" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900" letter-spacing="-7" text-anchor="middle">HAK</text>
+</svg>
