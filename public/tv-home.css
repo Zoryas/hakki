@@ -1840,15 +1840,28 @@ img {
 /* Leanback redesign */
 :root {
   --rail-width-base: 112px;
-  --content-gutter-tv-base: clamp(26px, 2vw, 72px);
-  --poster-width-tv-base: clamp(190px, 10vw, 280px);
-  --poster-gap-tv-base: clamp(18px, 0.9vw, 28px);
+  --content-gutter-tv-base: 42px;
+  --poster-width-tv-base: 236px;
+  --poster-gap-tv-base: 22px;
   --tv-ui-scale: 1;
-  --tv-hero-height: clamp(560px, 64dvh, 860px);
-  --tv-row-gap: clamp(34px, 3vw, 54px);
+  --tv-shell-gap: 20px;
+  --tv-hero-height: 720px;
+  --tv-hero-pad-top: 56px;
+  --tv-hero-pad-bottom: 54px;
+  --tv-hero-content-gap: 18px;
+  --tv-hero-title-size: 5.5rem;
+  --tv-hero-overview-size: 1.32rem;
+  --tv-rating-offset: 42px;
+  --tv-row-gap: 46px;
   --tv-row-bottom-padding: 84px;
   --tv-tile-overlay-offset: 82px;
   --tv-search-columns: 4;
+  --tv-search-sidebar-width: 460px;
+  --tv-search-stage-gap: 40px;
+  --tv-search-pad-top: 56px;
+  --tv-search-pad-bottom: 72px;
+  --tv-scroll-padding-end: 180px;
+  --tv-focus-gutter: 20px;
   --rail-width: var(--rail-width-base);
   --content-gutter-tv: var(--content-gutter-tv-base);
   --poster-width-tv: var(--poster-width-tv-base);
@@ -1862,13 +1875,121 @@ body.is-tv-layout {
   --poster-gap-tv: calc(var(--poster-gap-tv-base) * var(--tv-ui-scale));
 }
 
+body.is-tv-layout[data-tv-bucket='tv-720'] {
+  --tv-ui-scale: 0.8;
+  --rail-width-base: 92px;
+  --content-gutter-tv-base: 28px;
+  --poster-width-tv-base: 184px;
+  --poster-gap-tv-base: 18px;
+  --tv-shell-gap: 16px;
+  --tv-hero-height: 500px;
+  --tv-hero-pad-top: 34px;
+  --tv-hero-pad-bottom: 32px;
+  --tv-hero-content-gap: 14px;
+  --tv-hero-title-size: 4.2rem;
+  --tv-hero-overview-size: 1.06rem;
+  --tv-rating-offset: 26px;
+  --tv-row-gap: 34px;
+  --tv-row-bottom-padding: 66px;
+  --tv-tile-overlay-offset: 64px;
+  --tv-search-columns: 3;
+  --tv-search-sidebar-width: 320px;
+  --tv-search-stage-gap: 24px;
+  --tv-search-pad-top: 34px;
+  --tv-search-pad-bottom: 48px;
+  --tv-scroll-padding-end: 120px;
+  --tv-focus-gutter: 14px;
+}
+
+body.is-tv-layout[data-tv-bucket='tv-900'] {
+  --tv-ui-scale: 0.9;
+  --rail-width-base: 102px;
+  --content-gutter-tv-base: 34px;
+  --poster-width-tv-base: 208px;
+  --poster-gap-tv-base: 20px;
+  --tv-shell-gap: 18px;
+  --tv-hero-height: 610px;
+  --tv-hero-pad-top: 44px;
+  --tv-hero-pad-bottom: 40px;
+  --tv-hero-content-gap: 16px;
+  --tv-hero-title-size: 4.8rem;
+  --tv-hero-overview-size: 1.18rem;
+  --tv-rating-offset: 34px;
+  --tv-row-gap: 40px;
+  --tv-row-bottom-padding: 74px;
+  --tv-tile-overlay-offset: 72px;
+  --tv-search-columns: 4;
+  --tv-search-sidebar-width: 390px;
+  --tv-search-stage-gap: 30px;
+  --tv-search-pad-top: 42px;
+  --tv-search-pad-bottom: 56px;
+  --tv-scroll-padding-end: 140px;
+  --tv-focus-gutter: 16px;
+}
+
+body.is-tv-layout[data-tv-bucket='tv-1080'] {
+  --tv-ui-scale: 1;
+}
+
+body.is-tv-layout[data-tv-bucket='tv-1440'] {
+  --tv-ui-scale: 1.14;
+  --rail-width-base: 124px;
+  --content-gutter-tv-base: 56px;
+  --poster-width-tv-base: 282px;
+  --poster-gap-tv-base: 26px;
+  --tv-shell-gap: 24px;
+  --tv-hero-height: 880px;
+  --tv-hero-pad-top: 68px;
+  --tv-hero-pad-bottom: 62px;
+  --tv-hero-content-gap: 22px;
+  --tv-hero-title-size: 6.4rem;
+  --tv-hero-overview-size: 1.5rem;
+  --tv-rating-offset: 54px;
+  --tv-row-gap: 58px;
+  --tv-row-bottom-padding: 100px;
+  --tv-tile-overlay-offset: 94px;
+  --tv-search-columns: 5;
+  --tv-search-sidebar-width: 560px;
+  --tv-search-stage-gap: 52px;
+  --tv-search-pad-top: 68px;
+  --tv-search-pad-bottom: 86px;
+  --tv-scroll-padding-end: 220px;
+  --tv-focus-gutter: 24px;
+}
+
+body.is-tv-layout[data-tv-bucket='tv-2160'] {
+  --tv-ui-scale: 1.28;
+  --rail-width-base: 136px;
+  --content-gutter-tv-base: 72px;
+  --poster-width-tv-base: 320px;
+  --poster-gap-tv-base: 30px;
+  --tv-shell-gap: 28px;
+  --tv-hero-height: 1020px;
+  --tv-hero-pad-top: 84px;
+  --tv-hero-pad-bottom: 74px;
+  --tv-hero-content-gap: 26px;
+  --tv-hero-title-size: 7.2rem;
+  --tv-hero-overview-size: 1.68rem;
+  --tv-rating-offset: 68px;
+  --tv-row-gap: 66px;
+  --tv-row-bottom-padding: 116px;
+  --tv-tile-overlay-offset: 108px;
+  --tv-search-columns: 6;
+  --tv-search-sidebar-width: 680px;
+  --tv-search-stage-gap: 60px;
+  --tv-search-pad-top: 82px;
+  --tv-search-pad-bottom: 96px;
+  --tv-scroll-padding-end: 260px;
+  --tv-focus-gutter: 28px;
+}
+
 .app-shell {
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
   grid-template-columns: var(--rail-width) minmax(0, 1fr);
-  column-gap: clamp(16px, 1vw, 28px);
+  column-gap: calc(var(--tv-shell-gap) * var(--tv-ui-scale));
   background: #0b0b0b;
 }
 
@@ -1881,15 +2002,15 @@ body.is-tv-layout {
   display: grid;
   grid-template-rows: auto 1fr auto;
   justify-items: center;
-  gap: 28px;
-  padding: 30px 16px 24px;
+  gap: calc(28px * var(--tv-ui-scale));
+  padding: calc(30px * var(--tv-ui-scale)) calc(16px * var(--tv-ui-scale)) calc(24px * var(--tv-ui-scale));
   background: linear-gradient(180deg, rgba(8, 8, 8, 0.98), rgba(8, 8, 8, 0.92));
   border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .rail-brand {
   color: #e50914;
-  font-size: clamp(1.4rem, 0.9rem + 0.8vw, 2rem);
+  font-size: calc(1.7rem * var(--tv-ui-scale));
   font-weight: 900;
   letter-spacing: -0.12em;
   text-transform: uppercase;
@@ -1901,18 +2022,18 @@ body.is-tv-layout {
   align-self: center;
   align-content: center;
   justify-items: center;
-  gap: 14px;
+  gap: calc(14px * var(--tv-ui-scale));
 }
 
 .rail-button {
   position: relative;
   width: 100%;
-  min-height: 72px;
+  min-height: calc(72px * var(--tv-ui-scale));
   display: grid;
   place-items: center;
-  gap: 8px;
-  padding: 10px 0 16px;
-  border-radius: 22px;
+  gap: calc(8px * var(--tv-ui-scale));
+  padding: calc(10px * var(--tv-ui-scale)) 0 calc(16px * var(--tv-ui-scale));
+  border-radius: calc(22px * var(--tv-ui-scale));
   color: rgba(255, 255, 255, 0.7);
   background: transparent;
   border: 1px solid transparent;
@@ -1920,16 +2041,16 @@ body.is-tv-layout {
 }
 
 .rail-button-install {
-  min-height: 72px;
-  padding: 10px 0 16px;
+  min-height: calc(72px * var(--tv-ui-scale));
+  padding: calc(10px * var(--tv-ui-scale)) 0 calc(16px * var(--tv-ui-scale));
   border-color: transparent !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 
 .rail-icon {
-  width: 28px;
-  height: 28px;
+  width: calc(28px * var(--tv-ui-scale));
+  height: calc(28px * var(--tv-ui-scale));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1943,15 +2064,15 @@ body.is-tv-layout {
 .rail-label {
   position: absolute;
   top: 50%;
-  left: calc(100% + 18px);
+  left: calc(100% + (18px * var(--tv-ui-scale)));
   transform: translateY(-50%) translateX(-8px);
   opacity: 0;
-  padding: 10px 16px;
+  padding: calc(10px * var(--tv-ui-scale)) calc(16px * var(--tv-ui-scale));
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(18, 18, 18, 0.95);
   color: #ffffff;
-  font-size: 0.98rem;
+  font-size: calc(0.98rem * var(--tv-ui-scale));
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
@@ -1963,9 +2084,9 @@ body.is-tv-layout {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: 6px;
-  width: 34px;
-  height: 5px;
+  bottom: calc(6px * var(--tv-ui-scale));
+  width: calc(34px * var(--tv-ui-scale));
+  height: calc(5px * var(--tv-ui-scale));
   border-radius: 999px;
   background: #e50914;
   opacity: 0;
@@ -2011,17 +2132,17 @@ body.is-tv-layout {
 .rail-footer {
   width: 100%;
   display: grid;
-  gap: 10px;
+  gap: calc(10px * var(--tv-ui-scale));
   align-self: end;
 }
 
 .rail-chip {
-  padding: 10px 12px;
-  border-radius: 16px;
+  padding: calc(10px * var(--tv-ui-scale)) calc(12px * var(--tv-ui-scale));
+  border-radius: calc(16px * var(--tv-ui-scale));
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.68);
-  font-size: 0.82rem;
+  font-size: calc(0.82rem * var(--tv-ui-scale));
   line-height: 1.35;
   text-align: center;
 }
@@ -2032,8 +2153,8 @@ body.is-tv-layout {
 
 .content-shell {
   min-width: 0;
-  overflow-x: clip;
-  padding-left: clamp(4px, 0.4vw, 14px);
+  overflow-x: visible;
+  padding-left: calc(8px * var(--tv-ui-scale));
 }
 
 .screen-home {
@@ -2043,7 +2164,7 @@ body.is-tv-layout {
 
 .app-shell .hero {
   min-height: var(--tv-hero-height);
-  padding: calc(clamp(34px, 3.2vw, 72px) * var(--tv-ui-scale)) var(--content-gutter-tv) calc(clamp(36px, 3.6vw, 66px) * var(--tv-ui-scale));
+  padding: calc(var(--tv-hero-pad-top) * var(--tv-ui-scale)) var(--content-gutter-tv) calc(var(--tv-hero-pad-bottom) * var(--tv-ui-scale));
   align-items: flex-end;
 }
 
@@ -2055,17 +2176,17 @@ body.is-tv-layout {
 
 .app-shell .hero-content {
   width: min(calc(40rem * var(--tv-ui-scale)), 48vw);
-  gap: calc(clamp(14px, 1.4vw, 24px) * var(--tv-ui-scale));
+  gap: calc(var(--tv-hero-content-gap) * var(--tv-ui-scale));
 }
 
 .app-shell .hero-title {
   max-width: calc(34rem * var(--tv-ui-scale));
-  font-size: calc(clamp(4rem, 5.2vw, 7rem) * var(--tv-ui-scale));
+  font-size: calc(var(--tv-hero-title-size) * var(--tv-ui-scale));
 }
 
 .app-shell .hero-overview {
   max-width: calc(32rem * var(--tv-ui-scale));
-  font-size: calc(clamp(1.12rem, 1.1vw + 0.55rem, 1.6rem) * var(--tv-ui-scale));
+  font-size: calc(var(--tv-hero-overview-size) * var(--tv-ui-scale));
   line-height: 1.55;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -2075,7 +2196,7 @@ body.is-tv-layout {
 
 .app-shell .hero-rating {
   right: var(--content-gutter-tv);
-  bottom: calc(clamp(28px, 3vw, 54px) * var(--tv-ui-scale));
+  bottom: calc(var(--tv-rating-offset) * var(--tv-ui-scale));
 }
 
 .app-shell .rows-shell {
@@ -2087,7 +2208,7 @@ body.is-tv-layout {
 .app-shell .hero,
 .app-shell .row,
 .search-stage {
-  scroll-margin-block-start: clamp(16px, 2vw, 36px);
+  scroll-margin-block-start: calc(28px * var(--tv-ui-scale));
 }
 
 .app-shell .row {
@@ -2099,7 +2220,7 @@ body.is-tv-layout {
 }
 
 .app-shell .row-title {
-  font-size: calc(clamp(1.72rem, 1.3vw + 1rem, 2.6rem) * var(--tv-ui-scale));
+  font-size: calc(2.18rem * var(--tv-ui-scale));
 }
 
 .app-shell .row-count {
@@ -2109,11 +2230,11 @@ body.is-tv-layout {
 .app-shell .row-track {
   grid-auto-columns: var(--poster-width-tv);
   gap: var(--poster-gap-tv);
-  padding: calc(22px * var(--tv-ui-scale)) 0 var(--tv-row-bottom-padding);
+  padding: calc(22px * var(--tv-ui-scale)) var(--tv-focus-gutter) var(--tv-row-bottom-padding);
   margin: 0;
   overflow-y: visible;
-  scroll-padding-inline-start: 0;
-  scroll-padding-inline-end: calc(clamp(96px, 12vw, 260px) * var(--tv-ui-scale));
+  scroll-padding-inline-start: var(--tv-focus-gutter);
+  scroll-padding-inline-end: calc(var(--tv-scroll-padding-end) * var(--tv-ui-scale));
 }
 
 .app-shell .tile-button {
@@ -2140,7 +2261,7 @@ body.is-tv-layout {
 }
 
 .app-shell .tile-title {
-  font-size: calc(clamp(1.04rem, 0.62vw + 0.84rem, 1.46rem) * var(--tv-ui-scale));
+  font-size: calc(1.24rem * var(--tv-ui-scale));
   line-height: 1.18;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -2203,9 +2324,9 @@ body.is-tv-layout {
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
-  grid-template-columns: minmax(calc(320px * var(--tv-ui-scale)), 28vw) minmax(0, 1fr);
-  gap: calc(clamp(26px, 2.4vw, 60px) * var(--tv-ui-scale));
-  padding: calc(clamp(34px, 3vw, 70px) * var(--tv-ui-scale)) var(--content-gutter-tv) calc(72px * var(--tv-ui-scale));
+  grid-template-columns: var(--tv-search-sidebar-width) minmax(0, 1fr);
+  gap: calc(var(--tv-search-stage-gap) * var(--tv-ui-scale));
+  padding: calc(var(--tv-search-pad-top) * var(--tv-ui-scale)) var(--content-gutter-tv) calc(var(--tv-search-pad-bottom) * var(--tv-ui-scale));
 }
 
 .search-console,
@@ -2217,13 +2338,13 @@ body.is-tv-layout {
 
 .search-console {
   position: sticky;
-  top: 26px;
+  top: calc(26px * var(--tv-ui-scale));
 }
 
 .search-kicker,
 .search-genre-title {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 0.94rem;
+  font-size: calc(0.94rem * var(--tv-ui-scale));
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2236,7 +2357,7 @@ body.is-tv-layout {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(15, 15, 15, 0.92);
   color: #ffffff;
-  font-size: calc(clamp(1.28rem, 1vw + 0.84rem, 1.84rem) * var(--tv-ui-scale));
+  font-size: calc(1.62rem * var(--tv-ui-scale));
   font-weight: 700;
   line-height: 1.35;
 }
@@ -2316,9 +2437,9 @@ body.is-tv-layout {
 
 .search-empty {
   display: grid;
-  gap: 12px;
-  padding: 24px;
-  border-radius: 22px;
+  gap: calc(12px * var(--tv-ui-scale));
+  padding: calc(24px * var(--tv-ui-scale));
+  border-radius: calc(22px * var(--tv-ui-scale));
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -2326,59 +2447,6 @@ body.is-tv-layout {
 .search-empty h3,
 .search-empty p {
   margin: 0;
-}
-
-@media (min-width: 3700px) and (min-height: 2100px) {
-  html {
-    font-size: 21px;
-  }
-
-  body.is-tv-layout {
-    --tv-ui-scale: 1.24;
-    --tv-search-columns: 5;
-  }
-
-  :root {
-    --rail-width-base: 124px;
-    --content-gutter-tv-base: 86px;
-    --poster-width-tv-base: clamp(220px, 6.8vw, 320px);
-  }
-
-  .app-shell .hero {
-    min-height: clamp(720px, 58vh, 980px);
-  }
-
-  .search-stage {
-    grid-template-columns: minmax(420px, 30vw) minmax(0, 1fr);
-  }
-
-  .search-results-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-}
-
-@media (max-height: 880px) and (min-width: 960px) {
-  body.is-tv-layout {
-    --tv-ui-scale: 0.9;
-    --tv-hero-height: clamp(480px, 66dvh, 720px);
-    --tv-row-gap: clamp(26px, 2.6vw, 42px);
-    --tv-row-bottom-padding: 70px;
-    --tv-tile-overlay-offset: 68px;
-  }
-}
-
-@media (max-height: 720px) and (min-width: 960px) {
-  body.is-tv-layout {
-    --tv-ui-scale: 0.8;
-    --tv-hero-height: clamp(420px, 68dvh, 620px);
-    --tv-search-columns: 3;
-  }
-}
-
-@media (min-width: 1920px) and (min-height: 1080px) {
-  body.is-tv-layout {
-    --tv-ui-scale: 1.04;
-  }
 }
 
 @media (max-width: 1400px) {

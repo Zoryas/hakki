@@ -177,9 +177,29 @@
     return wide && tall && landscape && !coarsePointer
   }
 
+  function tvViewportBucket() {
+    const width = Math.max(window.innerWidth || 0, document.documentElement?.clientWidth || 0)
+    const height = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0)
+    const longSide = Math.max(width, height)
+    const shortSide = Math.min(width, height)
+
+    if (longSide >= 3200 || shortSide >= 1800) return 'tv-2160'
+    if (longSide >= 2400 || shortSide >= 1320) return 'tv-1440'
+    if (longSide >= 1900 || shortSide >= 1040) return 'tv-1080'
+    if (longSide >= 1500 || shortSide >= 840) return 'tv-900'
+    return 'tv-720'
+  }
+
   function syncEnvironmentClasses() {
-    document.body.classList.toggle('is-tv-layout', shouldUseTvLayout())
+    const useTvLayout = shouldUseTvLayout()
+    document.body.classList.toggle('is-tv-layout', useTvLayout)
     document.body.classList.toggle('is-android-browser', isAndroidEnvironment())
+
+    if (useTvLayout) {
+      document.body.dataset.tvBucket = tvViewportBucket()
+    } else {
+      delete document.body.dataset.tvBucket
+    }
   }
 
   function canUseNativeInstallPrompt() {
@@ -1906,5 +1926,4 @@ function artPalette(seed) {
     return esc(value).replace(/`/g, '&#96;')
   }
 })()
-
 

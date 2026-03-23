@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hak-pwa-v5'
+const CACHE_NAME = 'hak-pwa-v8'
 const APP_SHELL = [
   '/',
   '/app.webmanifest',
@@ -87,3 +87,4 @@ async function networkFirst(request, fallbackUrl = '') {
     throw _error
   }
 }
+

@@ -10,6 +10,7 @@
     </shape>
   </item>
   <item
-    android:drawable="@drawable/ic_launcher"
+    android:drawable="@drawable/hak_app_icon"
     android:gravity="center" />
 </layer-list>
+
