@@ -16471,6 +16471,8 @@ svg:not(:root).svg-inline--fa, svg:not(:host).svg-inline--fa {
   var PLAYER_RETURN_KEY = "arrwa:player-return";
   var PLAYER_PREVIEW_KEY = "arrwa:player-preview";
   var EMPTY_SUBTITLES = [{ id: "off", index: -1, label: "Off", meta: "No subtitles" }];
+  var PLAYER_MODE_HLS_JS = "hls-js";
+  var PLAYER_MODE_NATIVE_HLS = "native-hls";
   var DEFAULT_SEEK_PRESET_ID = "seek-10";
   var SEEK_PRESETS = [
     { id: "seek-5", label: "5 sec", meta: "Precise seeking", steps: [5, 5, 10, 15, 20, 30] },
@@ -16804,15 +16806,38 @@ svg:not(:root).svg-inline--fa, svg:not(:host).svg-inline--fa {
     const normalized = String(value).trim().toLowerCase();
     return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
   }
+  function browserUserAgent() {
+    return String(window.navigator.userAgent || "");
+  }
+  function isBrowserHere() {
+    return /browsehere|browserhere|com\.tcl\.browser/i.test(browserUserAgent());
+  }
+  function canUseNativeHls() {
+    if (typeof document === "undefined") return false;
+    const video = document.createElement("video");
+    return Boolean(
+      video.canPlayType("application/vnd.apple.mpegurl") || video.canPlayType("application/x-mpegURL")
+    );
+  }
+  function preferredPlayerMode() {
+    return isBrowserHere() && canUseNativeHls() ? PLAYER_MODE_NATIVE_HLS : PLAYER_MODE_HLS_JS;
+  }
+  function alternatePlayerMode(mode) {
+    return mode === PLAYER_MODE_NATIVE_HLS ? PLAYER_MODE_HLS_JS : PLAYER_MODE_NATIVE_HLS;
+  }
+  function isAutoplayBlockedError(message) {
+    const text = String(message || "").toLowerCase();
+    return text.includes("notallowederror") || text.includes("play() failed") || text.includes("user didn't interact") || text.includes("user did not interact") || text.includes("gesture") || text.includes("autoplay");
+  }
   function mapInput(event) {
     const code = event.keyCode || event.which;
     const key = event.key;
-    if (key === "ArrowUp" || code === 38) return "UP";
-    if (key === "ArrowDown" || code === 40) return "DOWN";
-    if (key === "ArrowLeft" || code === 37) return "LEFT";
-    if (key === "ArrowRight" || code === 39) return "RIGHT";
-    if (key === "Enter" || code === 13) return "SELECT";
-    if (key === "Escape" || key === "Backspace" || key === "BrowserBack" || key === "GoBack" || code === 8 || code === 27 || code === 461 || code === 10009) {
+    if (key === "ArrowUp" || code === 19 || code === 38) return "UP";
+    if (key === "ArrowDown" || code === 20 || code === 40) return "DOWN";
+    if (key === "ArrowLeft" || code === 21 || code === 37) return "LEFT";
+    if (key === "ArrowRight" || code === 22 || code === 39) return "RIGHT";
+    if (key === "Enter" || code === 13 || code === 23 || code === 66 || code === 96) return "SELECT";
+    if (key === "Escape" || key === "Backspace" || key === "BrowserBack" || key === "GoBack" || code === 4 || code === 8 || code === 27 || code === 97 || code === 111 || code === 461 || code === 10009) {
       return "BACK";
     }
     return "";
@@ -17221,6 +17246,7 @@ video::cue {
     const [playerReady, setPlayerReady] = (0, import_react16.useState)(false);
     const [error, setError] = (0, import_react16.useState)("");
     const [reloadKey, setReloadKey] = (0, import_react16.useState)(0);
+    const [playerMode, setPlayerMode] = (0, import_react16.useState)(() => preferredPlayerMode());
     const [audioOptions, setAudioOptions] = (0, import_react16.useState)([]);
     const [audioSelection, setAudioSelection] = (0, import_react16.useState)(-1);
     const [subtitleOptions, setSubtitleOptions] = (0, import_react16.useState)(EMPTY_SUBTITLES);
@@ -17240,6 +17266,7 @@ video::cue {
     const cueSnapshotRef = (0, import_react16.useRef)(/* @__PURE__ */ new WeakMap());
     const progressWriteRef = (0, import_react16.useRef)({ at: 0, watched: 0 });
     const resumeAppliedRef = (0, import_react16.useRef)(false);
+    const playerModeAttemptsRef = (0, import_react16.useRef)(/* @__PURE__ */ new Set([preferredPlayerMode()]));
     (0, import_react16.useEffect)(() => {
       const restore = readSessionJson(PLAYER_RETURN_KEY);
       const expectedType = initial.type === "tv" ? "tv" : "movie";
@@ -17309,6 +17336,9 @@ video::cue {
       progressWriteRef.current = { at: 0, watched: 0 };
       resumeAppliedRef.current = false;
       cueSnapshotRef.current = /* @__PURE__ */ new WeakMap();
+      const initialPlayerMode = preferredPlayerMode();
+      playerModeAttemptsRef.current = /* @__PURE__ */ new Set([initialPlayerMode]);
+      setPlayerMode(initialPlayerMode);
     }, [stream?.hls_url]);
     (0, import_react16.useEffect)(() => {
       writeLocalJson(SUBTITLE_SETTINGS_KEY, subtitleSettings);
@@ -17534,6 +17564,18 @@ video::cue {
       const nextTime = Math.max(0, duration ? Math.min(duration - 1, currentTime + amount * direction) : currentTime + amount * direction);
       playerInstance.seekTo(nextTime, "seconds");
     }, [currentSeekPreset, playerInstance]);
+    const tryAlternatePlayerMode = (0, import_react16.useCallback)((playerError) => {
+      const nextMode = alternatePlayerMode(playerMode);
+      if (playerModeAttemptsRef.current.has(nextMode)) return false;
+      if (nextMode === PLAYER_MODE_NATIVE_HLS && !canUseNativeHls()) return false;
+      playerModeAttemptsRef.current.add(nextMode);
+      console.warn(`[player] retrying playback with ${nextMode} after error:`, playerError);
+      setPlayerReady(false);
+      setError("");
+      setMenuState(null);
+      setPlayerMode(nextMode);
+      return true;
+    }, [playerMode]);
     const openSettingChoiceMenu = (0, import_react16.useCallback)((kind, options, selectedId, parentIndex) => {
       const index = Math.max(0, options.findIndex((option) => option.id === selectedId));
       setMenuState({ kind, index, parentKind: "subtitle-settings", parentIndex });
@@ -17922,7 +17964,8 @@ ${subtitleCueStyles}` }),
           hideControlsOnArrowUp: true,
           config: {
             file: {
-              forceHLS: true,
+              forceHLS: playerMode === PLAYER_MODE_HLS_JS,
+              forceDisableHls: playerMode === PLAYER_MODE_NATIVE_HLS,
               tracks: subtitleTracks,
               hlsOptions: {
                 enableWorker: true,
@@ -17942,11 +17985,18 @@ ${subtitleCueStyles}` }),
           onEnded: () => persistCurrentProgress({ completed: true, force: true }),
           onError: (playerError) => {
             const nextError = playerError instanceof Error ? playerError.message : "The video could not be played.";
+            if (isAutoplayBlockedError(nextError)) {
+              console.warn("[player] autoplay was blocked, leaving controls available for manual start:", nextError);
+              setError("");
+              setPlayerReady(true);
+              return;
+            }
+            if (tryAlternatePlayerMode(nextError)) return;
             setError(nextError);
             setPlayerReady(false);
           }
         },
-        stream.hls_url
+        `${stream.hls_url}:${playerMode}`
       ) : null,
       showLoadingOverlay ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(LoadingScreen, { preview: launchPreview }) : null,
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(TrackMenu, { menuState, options: menuOptions, detail: details, containerRef: menuContainerRef })

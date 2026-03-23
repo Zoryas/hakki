@@ -60,14 +60,26 @@
   }
 
   const CODE = {
+    4: 'BACK',
     8: 'BACK',
     13: 'SELECT',
-    19: 'PLAY',
+    19: 'UP',
+    20: 'DOWN',
+    21: 'LEFT',
+    22: 'RIGHT',
+    23: 'SELECT',
     27: 'BACK',
     37: 'LEFT',
     38: 'UP',
     39: 'RIGHT',
     40: 'DOWN',
+    66: 'SELECT',
+    85: 'PLAY',
+    96: 'SELECT',
+    97: 'BACK',
+    111: 'BACK',
+    126: 'PLAY',
+    127: 'PLAY',
     415: 'PLAY',
     461: 'BACK',
     10009: 'BACK',
@@ -84,6 +96,8 @@
 
   function bind() {
     state.pwaInstalled = isStandaloneMode()
+    state.pwaInstallHint = shouldOfferManualInstallHint()
+    syncEnvironmentClasses()
     document.addEventListener('click', onClick)
     document.addEventListener('keydown', onKey)
     document.addEventListener('focusin', (event) => {
@@ -92,7 +106,9 @@
     })
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
     window.addEventListener('appinstalled', onAppInstalled)
-    if ('serviceWorker' in navigator) {
+    window.addEventListener('resize', syncEnvironmentClasses)
+    window.addEventListener('orientationchange', syncEnvironmentClasses)
+    if ('serviceWorker' in navigator && canUseNativeInstallPrompt()) {
       window.addEventListener('load', registerPwaServiceWorker, { once: true })
     }
     const standaloneMedia = getStandaloneMedia()
@@ -119,6 +135,59 @@
       window.navigator.standalone ||
       String(document.referrer || '').startsWith('android-app://')
     )
+  }
+
+  function browserUserAgent() {
+    return String(window.navigator.userAgent || '')
+  }
+
+  function isAndroidEnvironment() {
+    return /android/i.test(browserUserAgent())
+  }
+
+  function isTvEnvironment() {
+    return /android tv|googletv|google tv|smart-tv|smarttv|hbbtv|aft[a-z0-9_-]+|bravia|shield android tv|inettvbrowser|viera|netcast|web0s|webos.tv|roku|tizen/i.test(browserUserAgent())
+  }
+
+  function isLocalOrigin() {
+    const host = String(window.location.hostname || '').toLowerCase()
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]'
+  }
+
+  function tvLayoutOverride() {
+    try {
+      const value = new URLSearchParams(window.location.search).get('tv')
+      if (value == null || value === '') return null
+      if (value === '1' || value === 'true' || value === 'yes' || value === 'on') return true
+      if (value === '0' || value === 'false' || value === 'no' || value === 'off') return false
+    } catch (_error) {
+      return null
+    }
+    return null
+  }
+
+  function shouldUseTvLayout() {
+    const override = tvLayoutOverride()
+    if (override !== null) return override
+    if (isTvEnvironment()) return true
+    const wide = (window.innerWidth || 0) >= 960
+    const tall = (window.innerHeight || 0) >= 540
+    const landscape = !window.matchMedia || window.matchMedia('(orientation: landscape)').matches
+    const coarsePointer = window.matchMedia ? window.matchMedia('(pointer: coarse)').matches : false
+    return wide && tall && landscape && !coarsePointer
+  }
+
+  function syncEnvironmentClasses() {
+    document.body.classList.toggle('is-tv-layout', shouldUseTvLayout())
+    document.body.classList.toggle('is-android-browser', isAndroidEnvironment())
+  }
+
+  function canUseNativeInstallPrompt() {
+    return Boolean(window.isSecureContext || isLocalOrigin())
+  }
+
+  function shouldOfferManualInstallHint() {
+    return isAndroidEnvironment() || shouldUseTvLayout() || canUseNativeInstallPrompt()
   }
 
   function shouldShowPwaInstall() {
@@ -175,6 +244,11 @@
   }
 
   function showPwaInstallHint() {
+    if (!canUseNativeInstallPrompt()) {
+      window.alert('Install prompts are blocked on local network addresses like this one. To install HAK as an app, open it on the same device with http://127.0.0.1:4100 or serve it over HTTPS. On Android TV you can still keep using the browser, and some TV browsers may offer a manual shortcut in their menu.')
+      return
+    }
+
     window.alert('Open the browser menu and choose "Install app" or "Add to Home screen" to pin HAK on Android.')
   }
 
@@ -1791,7 +1865,6 @@ function artPalette(seed) {
     return esc(value).replace(/`/g, '&#96;')
   }
 })()
-
 
 
 

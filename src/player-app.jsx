@@ -16,6 +16,8 @@ const initial = boot.initial || {};
 const PLAYER_RETURN_KEY = 'arrwa:player-return';
 const PLAYER_PREVIEW_KEY = 'arrwa:player-preview';
 const EMPTY_SUBTITLES = [{ id: 'off', index: -1, label: 'Off', meta: 'No subtitles' }];
+const PLAYER_MODE_HLS_JS = 'hls-js';
+const PLAYER_MODE_NATIVE_HLS = 'native-hls';
 const DEFAULT_SEEK_PRESET_ID = 'seek-10';
 const SEEK_PRESETS = [
   { id: 'seek-5', label: '5 sec', meta: 'Precise seeking', steps: [5, 5, 10, 15, 20, 30] },
@@ -352,21 +354,61 @@ function parseBool(value, fallback = false) {
   return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
 }
 
+function browserUserAgent() {
+  return String(window.navigator.userAgent || '');
+}
+
+function isBrowserHere() {
+  return /browsehere|browserhere|com\.tcl\.browser/i.test(browserUserAgent());
+}
+
+function canUseNativeHls() {
+  if (typeof document === 'undefined') return false;
+  const video = document.createElement('video');
+  return Boolean(
+    video.canPlayType('application/vnd.apple.mpegurl') ||
+    video.canPlayType('application/x-mpegURL')
+  );
+}
+
+function preferredPlayerMode() {
+  return isBrowserHere() && canUseNativeHls() ? PLAYER_MODE_NATIVE_HLS : PLAYER_MODE_HLS_JS;
+}
+
+function alternatePlayerMode(mode) {
+  return mode === PLAYER_MODE_NATIVE_HLS ? PLAYER_MODE_HLS_JS : PLAYER_MODE_NATIVE_HLS;
+}
+
+function isAutoplayBlockedError(message) {
+  const text = String(message || '').toLowerCase();
+  return (
+    text.includes('notallowederror') ||
+    text.includes('play() failed') ||
+    text.includes('user didn\'t interact') ||
+    text.includes('user did not interact') ||
+    text.includes('gesture') ||
+    text.includes('autoplay')
+  );
+}
+
 function mapInput(event) {
   const code = event.keyCode || event.which;
   const key = event.key;
-  if (key === 'ArrowUp' || code === 38) return 'UP';
-  if (key === 'ArrowDown' || code === 40) return 'DOWN';
-  if (key === 'ArrowLeft' || code === 37) return 'LEFT';
-  if (key === 'ArrowRight' || code === 39) return 'RIGHT';
-  if (key === 'Enter' || code === 13) return 'SELECT';
+  if (key === 'ArrowUp' || code === 19 || code === 38) return 'UP';
+  if (key === 'ArrowDown' || code === 20 || code === 40) return 'DOWN';
+  if (key === 'ArrowLeft' || code === 21 || code === 37) return 'LEFT';
+  if (key === 'ArrowRight' || code === 22 || code === 39) return 'RIGHT';
+  if (key === 'Enter' || code === 13 || code === 23 || code === 66 || code === 96) return 'SELECT';
   if (
     key === 'Escape' ||
     key === 'Backspace' ||
     key === 'BrowserBack' ||
     key === 'GoBack' ||
+    code === 4 ||
     code === 8 ||
     code === 27 ||
+    code === 97 ||
+    code === 111 ||
     code === 461 ||
     code === 10009
   ) {
@@ -831,6 +873,7 @@ function PlayerApp() {
   const [playerReady, setPlayerReady] = useState(false);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [playerMode, setPlayerMode] = useState(() => preferredPlayerMode());
   const [audioOptions, setAudioOptions] = useState([]);
   const [audioSelection, setAudioSelection] = useState(-1);
   const [subtitleOptions, setSubtitleOptions] = useState(EMPTY_SUBTITLES);
@@ -850,6 +893,7 @@ function PlayerApp() {
   const cueSnapshotRef = useRef(new WeakMap());
   const progressWriteRef = useRef({ at: 0, watched: 0 });
   const resumeAppliedRef = useRef(false);
+  const playerModeAttemptsRef = useRef(new Set([preferredPlayerMode()]));
 
   useEffect(() => {
     const restore = readSessionJson(PLAYER_RETURN_KEY);
@@ -931,6 +975,9 @@ function PlayerApp() {
     progressWriteRef.current = { at: 0, watched: 0 };
     resumeAppliedRef.current = false;
     cueSnapshotRef.current = new WeakMap();
+    const initialPlayerMode = preferredPlayerMode();
+    playerModeAttemptsRef.current = new Set([initialPlayerMode]);
+    setPlayerMode(initialPlayerMode);
   }, [stream?.hls_url]);
 
   useEffect(() => {
@@ -1189,6 +1236,20 @@ function PlayerApp() {
     const nextTime = Math.max(0, duration ? Math.min(duration - 1, currentTime + amount * direction) : currentTime + amount * direction);
     playerInstance.seekTo(nextTime, 'seconds');
   }, [currentSeekPreset, playerInstance]);
+
+  const tryAlternatePlayerMode = useCallback((playerError) => {
+    const nextMode = alternatePlayerMode(playerMode);
+    if (playerModeAttemptsRef.current.has(nextMode)) return false;
+    if (nextMode === PLAYER_MODE_NATIVE_HLS && !canUseNativeHls()) return false;
+
+    playerModeAttemptsRef.current.add(nextMode);
+    console.warn(`[player] retrying playback with ${nextMode} after error:`, playerError);
+    setPlayerReady(false);
+    setError('');
+    setMenuState(null);
+    setPlayerMode(nextMode);
+    return true;
+  }, [playerMode]);
 
   const openSettingChoiceMenu = useCallback((kind, options, selectedId, parentIndex) => {
     const index = Math.max(0, options.findIndex((option) => option.id === selectedId));
@@ -1601,7 +1662,7 @@ function PlayerApp() {
 ${subtitleCueStyles}`}</style>
       {stream?.hls_url ? (
         <TVPlayer
-          key={stream.hls_url}
+          key={`${stream.hls_url}:${playerMode}`}
           url={stream.hls_url}
           playing={parseBool(initial.autoplay, true)}
           title={title}
@@ -1614,7 +1675,8 @@ ${subtitleCueStyles}`}</style>
           hideControlsOnArrowUp
           config={{
             file: {
-              forceHLS: true,
+              forceHLS: playerMode === PLAYER_MODE_HLS_JS,
+              forceDisableHls: playerMode === PLAYER_MODE_NATIVE_HLS,
               tracks: subtitleTracks,
               hlsOptions: {
                 enableWorker: true,
@@ -1636,6 +1698,13 @@ ${subtitleCueStyles}`}</style>
             const nextError = playerError instanceof Error
               ? playerError.message
               : 'The video could not be played.';
+            if (isAutoplayBlockedError(nextError)) {
+              console.warn('[player] autoplay was blocked, leaving controls available for manual start:', nextError);
+              setError('');
+              setPlayerReady(true);
+              return;
+            }
+            if (tryAlternatePlayerMode(nextError)) return;
             setError(nextError);
             setPlayerReady(false);
           }}
