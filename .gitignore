@@ -6,3 +6,7 @@ node_modules/
 *.txt
 HAK
 System.Drawing.Drawing2D.GraphicsPath
+.gradle/
+**/build/
+android-tv/local.properties
+android-tv/.idea/

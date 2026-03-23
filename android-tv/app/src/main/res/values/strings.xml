@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Hakki TV</string>
+  <string name="server_panel_title">Connect to your HAK server</string>
+  <string name="server_panel_body">Enter the LAN URL of the HAK server running on your phone or PC. Example: http://192.168.1.23:4100</string>
+  <string name="server_panel_footer">Press Menu on your remote anytime to reopen this panel. The app will automatically append tv=1 when needed.</string>
+  <string name="url_hint">http://192.168.1.23:4100</string>
+  <string name="server_status_hint">Enter your server URL, then choose Save and Open.</string>
+  <string name="save_and_open">Save and Open</string>
+  <string name="retry_connection">Retry</string>
+  <string name="use_default_url">Use Default URL</string>
+</resources>

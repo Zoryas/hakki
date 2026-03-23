@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hak-pwa-v4'
+const CACHE_NAME = 'hak-pwa-v5'
 const APP_SHELL = [
   '/',
   '/app.webmanifest',

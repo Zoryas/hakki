@@ -538,21 +538,62 @@ function removeSessionKey(key) {
   }
 }
 
-function readLocalJson(key) {
+function nativeStorageBridge() {
+  const bridge = window.HakkiNativeStorage;
+  if (!bridge) return null;
+  if (typeof bridge.getItem !== 'function' || typeof bridge.setItem !== 'function') return null;
+  return bridge;
+}
+
+function readNativeJson(key) {
+  const bridge = nativeStorageBridge();
+  if (!bridge) return null;
   try {
-    const raw = window.localStorage.getItem(key);
+    const raw = bridge.getItem(key);
     return raw ? JSON.parse(raw) : null;
   } catch (_error) {
     return null;
   }
 }
 
-function writeLocalJson(key, value) {
+function writeNativeJson(key, value) {
+  const bridge = nativeStorageBridge();
+  if (!bridge) return;
   try {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    bridge.setItem(key, JSON.stringify(value));
+  } catch (_error) {
+    // ignore bridge failures when native storage is unavailable
+  }
+}
+
+function readLocalJson(key) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
   } catch (_error) {
     // ignore local storage failures in restricted environments
   }
+
+  const nativeValue = readNativeJson(key);
+  if (!nativeValue) return null;
+
+  try {
+    window.localStorage.setItem(key, JSON.stringify(nativeValue));
+  } catch (_error) {
+    // ignore local storage failures in restricted environments
+  }
+
+  return nativeValue;
+}
+
+function writeLocalJson(key, value) {
+  const serialized = JSON.stringify(value);
+  try {
+    window.localStorage.setItem(key, serialized);
+  } catch (_error) {
+    // ignore local storage failures in restricted environments
+  }
+  writeNativeJson(key, value);
 }
 
 function readContinueWatchingStore() {

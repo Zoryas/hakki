@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@android:color/black">
+
+  <WebView
+    android:id="@+id/webView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:importantForAutofill="no"
+    android:overScrollMode="never" />
+
+  <FrameLayout
+    android:id="@+id/configOverlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#8C000000"
+    android:focusable="false"
+    android:visibility="gone">
+
+    <LinearLayout
+      android:id="@+id/configPanel"
+      android:layout_width="560dp"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:background="@drawable/config_panel_background"
+      android:orientation="vertical"
+      android:padding="28dp">
+
+      <TextView
+        android:id="@+id/panelTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/server_panel_title"
+        android:textColor="@android:color/white"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+
+      <TextView
+        android:id="@+id/panelMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:lineSpacingExtra="4dp"
+        android:text="@string/server_panel_body"
+        android:textColor="#CCFFFFFF"
+        android:textSize="16sp" />
+
+      <EditText
+        android:id="@+id/urlInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:autofillHints=""
+        android:background="@drawable/url_input_background"
+        android:hint="@string/url_hint"
+        android:imeOptions="actionDone"
+        android:inputType="textUri"
+        android:maxLines="1"
+        android:paddingHorizontal="18dp"
+        android:paddingVertical="14dp"
+        android:selectAllOnFocus="true"
+        android:textColor="@android:color/white"
+        android:textColorHint="#80FFFFFF"
+        android:textSize="18sp" />
+
+      <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/server_status_hint"
+        android:textColor="#A7C5FF"
+        android:textSize="15sp" />
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Button
+          android:id="@+id/saveButton"
+          android:layout_width="0dp"
+          android:layout_height="56dp"
+          android:layout_weight="1"
+          android:background="@drawable/tv_button_background"
+          android:paddingHorizontal="18dp"
+          android:text="@string/save_and_open"
+          android:textAllCaps="false"
+          android:textColor="@android:color/white"
+          android:textSize="18sp" />
+
+        <Button
+          android:id="@+id/retryButton"
+          android:layout_width="0dp"
+          android:layout_height="56dp"
+          android:layout_marginStart="12dp"
+          android:layout_weight="1"
+          android:background="@drawable/tv_button_background"
+          android:paddingHorizontal="18dp"
+          android:text="@string/retry_connection"
+          android:textAllCaps="false"
+          android:textColor="@android:color/white"
+          android:textSize="18sp" />
+      </LinearLayout>
+
+      <Button
+        android:id="@+id/defaultButton"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/tv_button_background_secondary"
+        android:paddingHorizontal="18dp"
+        android:text="@string/use_default_url"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:visibility="gone" />
+
+      <TextView
+        android:id="@+id/footerHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:lineSpacingExtra="3dp"
+        android:text="@string/server_panel_footer"
+        android:textColor="#8EFFFFFF"
+        android:textSize="14sp" />
+    </LinearLayout>
+  </FrameLayout>
+
+</FrameLayout>
