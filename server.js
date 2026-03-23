@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
+const { Readable } = require('node:stream');
 const vm = require('node:vm');
 const { performance } = require('node:perf_hooks');
 const { TextEncoder, TextDecoder } = require('node:util');
@@ -40,6 +41,7 @@ const DEFAULT_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36';
 const BOOTSTRAP_TIMEOUT_MS = Number(process.env.BOOTSTRAP_TIMEOUT_MS || 10000);
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 20000);
+const STREAM_PROXY_ENABLED = parseBoolean(process.env.STREAM_PROXY_ENABLED, true);
 const STATIC_ROOT = path.join(__dirname, 'public');
 const STATIC_MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
@@ -419,6 +421,152 @@ function sendHtml(response, statusCode, html) {
   response.end(html);
 }
 
+function createProxyUrl(targetUrl, referer = '') {
+  const params = new URLSearchParams({ url: String(targetUrl) });
+  if (referer) {
+    params.set('ref', String(referer));
+  }
+  return `/proxy/media?${params.toString()}`;
+}
+
+function normalizeProxyTarget(rawUrl) {
+  if (!rawUrl) {
+    throw new Error('url is required');
+  }
+
+  let targetUrl;
+  try {
+    targetUrl = new URL(String(rawUrl));
+  } catch (_error) {
+    throw new Error('url must be an absolute http(s) URL');
+  }
+
+  if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
+    throw new Error('url must use http or https');
+  }
+
+  return targetUrl;
+}
+
+function resolveAbsoluteUrl(rawValue, baseUrl) {
+  try {
+    return new URL(String(rawValue), baseUrl).toString();
+  } catch (_error) {
+    return String(rawValue);
+  }
+}
+
+function rewriteManifestLine(line, manifestUrl, upstreamReferer = '') {
+  const trimmed = line.trim();
+  if (!trimmed) return line;
+  const nextReferer = upstreamReferer || manifestUrl;
+
+  if (trimmed.startsWith('#')) {
+    return line.replace(/URI="([^"]+)"/g, (_match, rawValue) => {
+      const absoluteUrl = resolveAbsoluteUrl(rawValue, manifestUrl);
+      return `URI="${createProxyUrl(absoluteUrl, nextReferer)}"`;
+    });
+  }
+
+  const absoluteUrl = resolveAbsoluteUrl(trimmed, manifestUrl);
+  return createProxyUrl(absoluteUrl, nextReferer);
+}
+
+function rewriteManifest(text, manifestUrl, upstreamReferer = '') {
+  return text
+    .split(/\r?\n/)
+    .map((line) => rewriteManifestLine(line, manifestUrl, upstreamReferer))
+    .join('\n');
+}
+
+function shouldRewriteManifest(targetUrl, contentType) {
+  const normalizedType = String(contentType || '').toLowerCase();
+  return (
+    targetUrl.pathname.toLowerCase().endsWith('.m3u8') ||
+    normalizedType.includes('mpegurl') ||
+    normalizedType.includes('vnd.apple.mpegurl')
+  );
+}
+
+function buildProxyHeaders(request, targetUrl, referer = '') {
+  const headers = {
+    accept: request.headers.accept || '*/*',
+  };
+
+  if (request.headers.range) {
+    headers.range = request.headers.range;
+  }
+
+  if (referer) {
+    headers.referer = referer;
+    try {
+      headers.origin = new URL(referer).origin;
+    } catch (_error) {
+      headers.origin = targetUrl.origin;
+    }
+  } else {
+    headers.referer = `${targetUrl.origin}/`;
+    headers.origin = targetUrl.origin;
+  }
+
+  return headers;
+}
+
+function copyProxyHeader(sourceHeaders, targetHeaders, name) {
+  const value = sourceHeaders.get(name);
+  if (value) {
+    targetHeaders[name] = value;
+  }
+}
+
+async function handleMediaProxy(request, response, requestUrl) {
+  const targetUrl = normalizeProxyTarget(requestUrl.searchParams.get('url'));
+  const referer = requestUrl.searchParams.get('ref') || '';
+  const upstream = await fetchWithTimeout(targetUrl, {
+    headers: buildProxyHeaders(request, targetUrl, referer),
+  });
+
+  const contentType = upstream.headers.get('content-type') || '';
+  if (!upstream.ok) {
+    console.warn(`[proxy] upstream ${upstream.status} for ${targetUrl.toString()} (ref: ${referer || 'none'})`);
+  }
+
+  if (shouldRewriteManifest(targetUrl, contentType)) {
+    const manifest = await upstream.text();
+    const rewrittenManifest = upstream.ok ? rewriteManifest(manifest, targetUrl.toString(), referer) : manifest;
+
+    response.writeHead(upstream.status, {
+      'content-type': contentType || 'application/vnd.apple.mpegurl; charset=utf-8',
+      'cache-control': 'no-store',
+      'access-control-allow-origin': '*',
+      'access-control-allow-methods': 'GET, OPTIONS',
+      'access-control-allow-headers': 'content-type, range',
+    });
+    response.end(rewrittenManifest);
+    return;
+  }
+
+  const responseHeaders = {
+    'cache-control': 'no-store',
+    'access-control-allow-origin': '*',
+    'access-control-allow-methods': 'GET, OPTIONS',
+    'access-control-allow-headers': 'content-type, range',
+  };
+  copyProxyHeader(upstream.headers, responseHeaders, 'content-type');
+  copyProxyHeader(upstream.headers, responseHeaders, 'content-range');
+  copyProxyHeader(upstream.headers, responseHeaders, 'accept-ranges');
+  copyProxyHeader(upstream.headers, responseHeaders, 'etag');
+  copyProxyHeader(upstream.headers, responseHeaders, 'last-modified');
+
+  response.writeHead(upstream.status, responseHeaders);
+  if (!upstream.body) {
+    response.end();
+    return;
+  }
+
+  Readable.fromWeb(upstream.body).pipe(response);
+}
+
 function normalizeParams(searchParams) {
   const tmdbId = searchParams.get('tmdb_id') || searchParams.get('id');
   const type = (searchParams.get('type') || 'movie').toLowerCase();
@@ -427,6 +575,8 @@ function normalizeParams(searchParams) {
   const multiLang = parseBoolean(searchParams.get('multiLang') || searchParams.get('multi_lang'), false);
   const debug = parseBoolean(searchParams.get('debug'), false);
   const validate = !parseBoolean(searchParams.get('no_validate') || searchParams.get('skip_validate'), false);
+  const direct = parseBoolean(searchParams.get('direct'), false);
+  const proxy = direct ? false : parseBoolean(searchParams.get('proxy'), STREAM_PROXY_ENABLED);
 
   if (!tmdbId || !/^\d+$/.test(String(tmdbId))) {
     throw new Error('tmdb_id is required and must be numeric');
@@ -454,6 +604,7 @@ function normalizeParams(searchParams) {
     multiLang,
     debug,
     validate,
+    proxy,
   };
 }
 
@@ -1224,11 +1375,23 @@ async function handleExtract(requestUrl) {
     manifest = await validateManifest(result.hls_url, result.trace);
   }
 
+  const absoluteHlsUrl = resolveAbsoluteUrl(result.hls_url, result.page_url);
+  const hlsUrl = params.proxy ? createProxyUrl(absoluteHlsUrl, result.page_url) : absoluteHlsUrl;
+  const subtitles = result.subtitles.map((entry) => {
+    if (!params.proxy || !entry?.url) return entry;
+    return {
+      ...entry,
+      url: createProxyUrl(resolveAbsoluteUrl(entry.url, result.page_url), result.page_url),
+    };
+  });
+
   return {
     success: true,
-    hls_url: result.hls_url,
-    subtitles: result.subtitles,
+    hls_url: hlsUrl,
+    subtitles,
     source_id: result.source_id,
+    proxied: params.proxy,
+    raw_hls_url: params.debug ? result.hls_url : undefined,
     token: params.debug ? result.token : undefined,
     api_url: params.debug ? result.api_url : undefined,
     page_url: params.debug ? result.page_url : undefined,
@@ -1274,6 +1437,11 @@ const server = http.createServer(async (request, response) => {
         'cache-control': 'no-cache',
         'service-worker-allowed': '/',
       });
+      return;
+    }
+
+    if (requestUrl.pathname === '/proxy/media') {
+      await handleMediaProxy(request, response, requestUrl);
       return;
     }
 
@@ -1348,7 +1516,7 @@ const server = http.createServer(async (request, response) => {
       sendJson(response, 404, {
         success: false,
         error: 'Not found',
-        available_endpoints: ['/', '/player', '/app.webmanifest', '/app-sw.js', '/api/catalog', '/api/details', '/api/search', '/extract', '/resolve', '/health'],
+        available_endpoints: ['/', '/player', '/app.webmanifest', '/app-sw.js', '/api/catalog', '/api/details', '/api/search', '/extract', '/resolve', '/proxy/media', '/health'],
       });
       return;
     }
@@ -1370,12 +1538,6 @@ server.listen(PORT, HOST, () => {
     console.log(`LAN access enabled on 0.0.0.0:${PORT}`);
   }
 });
-
-
-
-
-
-
 
 
 
